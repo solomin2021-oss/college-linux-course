@@ -30,7 +30,7 @@
 ### Необходимое ПО
 1. [Git](https://git-scm.com/install/) (Выбирать способ установки по вашей ОС)
 
-2. [VirtualBox 7.2](https://www.virtualbox.org/wiki/Download_Old_Builds_7_2) / [VirtualBox 6.0 (для старых пк(слабое железо или старая ОС))](https://www.virtualbox.org/wiki/Download_Old_Builds_6_0) (Выбирать установщик по вашей ОС) 
+2. [VirtualBox 7.2](https://www.virtualbox.org/wiki/Download_Old_Builds_7_2) / [VirtualBox 6.0 (для старых пк(слабое железо и/или старая ОС))](https://www.virtualbox.org/wiki/Download_Old_Builds_6_0) (Выбирать установщик по вашей ОС) 
 
 2.1 Для Windows: В случае предупреждения отсутствия зависимостей Python Core и win32api, не стесняемся качать [Python](https://www.python.org/downloads/) и после выписывать в терминал
 
