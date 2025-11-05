@@ -76,6 +76,8 @@ git clone https://github.com/virusneo1997-del/college-linux-admin-course.git
 3. [Урок 3: Веб-сервер Nginx](./lessons/03-web-server/README.md)
 4. [Урок 4: Мониторинг системы](./lessons/04-monitoring/README.md)
 
+## Так же
+
 📞 Поддержка
 🐛 Сообщить о проблеме
 
