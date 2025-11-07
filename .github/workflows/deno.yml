@@ -1,0 +1,46 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow will install Deno then run `deno lint` and `deno test`.
+# For more information see: https://github.com/denoland/setup-deno
+
+name: 🧪 Тест автоматизации
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Позволяет запустить вручную
+
+jobs:
+  test-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔍 Проверка файлов
+        run: |
+          echo "Проверяем наличие файлов..."
+          ls -la .github/workflows/
+          ls -la .github/scripts/
+          echo "✅ Все файлы на месте"
+          
+      - name: 📝 Проверка PROJECT_NUMBER
+        run: |
+          echo "Проверяем PROJECT_NUMBER..."
+          PROJECT_NUM=$(grep "PROJECT_NUMBER:" .github/workflows/auto-project-board.yml | cut -d: -f2 | tr -d ' ')
+          echo "PROJECT_NUMBER: $PROJECT_NUM"
+          if [ "$PROJECT_NUM" -eq 1 ]; then
+            echo "❌ PROJECT_NUMBER не изменен!"
+            exit 1
+          else
+            echo "✅ PROJECT_NUMBER настроен: $PROJECT_NUM"
+          fi
+            
+      - name: 🟢 Проверка Node.js скрипта
+        run: |
+          echo "Проверяем JavaScript синтаксис..."
+          node -c .github/scripts/project-automation.js
+          echo "✅ JavaScript синтаксис корректен"
