@@ -8,7 +8,8 @@ on:
 
 env:
   PROJECT_NUMBER: 4
-  ORGANIZATION: virusneo1997-del
+  OWNER: virusneo1997-del
+  IS_ORGANIZATION: false
 
 permissions:
   contents: read
@@ -21,8 +22,6 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: 🎯 Автоматическое обновление карточек
         uses: actions/github-script@v6
