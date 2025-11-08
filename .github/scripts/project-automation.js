@@ -1,7 +1,8 @@
 const automateProjectBoard = async ({ github, context }) => {
-  // Конфигурация - замени эти значения!
-  const PROJECT_NUMBER = 4; // Номер твоего проекта (из URL)
-  const ORGANIZATION = 'virusneo1997-del'; // Твой GitHub username
+  // Конфигурация
+  const PROJECT_NUMBER = 4;
+  const OWNER = 'virusneo1997-del'; // Ваш username
+  const IS_ORGANIZATION = false; // false если это пользовательский проект
 
   console.log('🚀 Запуск автоматизации Project Board...');
   console.log(`Событие: ${context.eventName}, Действие: ${context.payload.action}`);
@@ -9,7 +10,7 @@ const automateProjectBoard = async ({ github, context }) => {
 
   try {
     // 1. Получаем ID проекта
-    const projectId = await getProjectId(github, ORGANIZATION, PROJECT_NUMBER);
+    const projectId = await getProjectId(github, OWNER, PROJECT_NUMBER, IS_ORGANIZATION);
     if (!projectId) {
       console.log('❌ Проект не найден');
       return;
@@ -60,11 +61,13 @@ const automateProjectBoard = async ({ github, context }) => {
   }
 };
 
-// Вспомогательные функции
-async function getProjectId(github, org, projectNumber) {
+// Обновленная функция получения ID проекта
+async function getProjectId(github, owner, projectNumber, isOrganization = false) {
+  const entityType = isOrganization ? 'organization' : 'user';
+  
   const query = `
     query {
-      organization(login: "${org}") {
+      ${entityType}(login: "${owner}") {
         projectV2(number: ${projectNumber}) {
           id
           title
@@ -74,9 +77,10 @@ async function getProjectId(github, org, projectNumber) {
   `;
   
   const result = await github.graphql(query);
-  return result.organization?.projectV2?.id;
+  return result[entityType]?.projectV2?.id;
 }
 
+// Остальные функции остаются без изменений
 async function getStatusField(github, projectId) {
   const query = `
     query {
@@ -147,7 +151,6 @@ function determineNewStatus(context) {
   const action = context.payload.action;
   const reviewState = context.payload.review?.state;
 
-  // Логика определения статуса
   if (event === 'pull_request') {
     switch (action) {
       case 'opened':
