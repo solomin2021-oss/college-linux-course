@@ -84,7 +84,7 @@ jobs:
               console.log(`✅ Мерж: ${prMerged}`);
               console.log(`📝 Черновик: ${prDraft}`);
               
-              // ОПРЕДЕЛЯЕМ НОВЫЙ СТАТУС - ИСПРАВЛЕННАЯ ЛОГИКА
+              // ОПРЕДЕЛЯЕМ НОВЫЙ СТАТУС
               let newStatus = null;
               
               switch (prAction) {
@@ -99,7 +99,6 @@ jobs:
                   break;
                   
                 case 'reopened':
-                  // ВОТ ИСПРАВЛЕНИЕ - при reopen возвращаем в To do
                   newStatus = 'To do';
                   console.log('🎯 PR переоткрыт - устанавливаем: To do');
                   break;
@@ -157,10 +156,10 @@ jobs:
                         }
                       }
                     }
-                    items(first: 20) {
+                    items(first: 50) {
                       nodes {
                         id
-                        fieldValues(first: 5) {
+                        fieldValues(first: 10) {
                           nodes {
                             ... on ProjectV2ItemFieldTextValue {
                               field {
@@ -217,35 +216,76 @@ jobs:
               
               console.log(`📋 Опция статуса: ${statusOption.name} (ID: ${statusOption.id})`);
               
-              // 6. ИЩЕМ КАРТОЧКУ СТУДЕНТА
+              // 6. ИЩЕМ КАРТОЧКУ СТУДЕНТА ИЛИ СОЗДАЕМ НОВУЮ
               console.log(`🔍 Ищем карточку для: ${author}`);
               console.log(`📊 Всего карточек: ${project.items.nodes.length}`);
               
-              const studentItem = project.items.nodes.find(item => {
+              let studentItem = project.items.nodes.find(item => {
                 const githubField = item.fieldValues.nodes.find(f => 
                   f.field && f.field.name === 'Student GitHub' && f.text
                 );
                 return githubField && githubField.text === author;
               });
               
+              // 🔄 АВТОМАТИЧЕСКОЕ СОЗДАНИЕ КАРТОЧКИ ЕСЛИ НЕ НАЙДЕНА
               if (!studentItem) {
-                console.log(`❌ Карточка для ${author} не найдена`);
-                console.log('📋 Доступные студенты:');
-                project.items.nodes.forEach(item => {
-                  const githubField = item.fieldValues.nodes.find(f => 
-                    f.field && f.field.name === 'Student GitHub' && f.text
-                  );
-                  if (githubField) {
-                    const currentStatus = item.fieldValues.nodes.find(f => 
-                      f.field && f.field.name === 'Status' && f.name
-                    );
-                    console.log(`- ${githubField.text} (статус: ${currentStatus?.name || 'не установлен'})`);
+                console.log(`🆕 Карточка для ${author} не найдена - создаем новую...`);
+                
+                // Находим поле Student GitHub
+                const studentGitHubField = project.fields.nodes.find(field => 
+                  field.name === 'Student GitHub'
+                );
+                
+                if (!studentGitHubField) {
+                  console.log('❌ Поле Student GitHub не найдено в проекте');
+                  return;
+                }
+                
+                // Создаем новую карточку
+                const createItemMutation = `mutation CreateProjectItem($input: AddProjectV2ItemByIdInput!) {
+                  addProjectV2ItemById(input: $input) {
+                    item {
+                      id
+                    }
+                  }
+                }`;
+                
+                const createResult = await github.graphql(createItemMutation, {
+                  input: {
+                    projectId: projectId,
+                    contentId: pull_request.node_id
                   }
                 });
-                return;
+                
+                const newItemId = createResult.addProjectV2ItemById.item.id;
+                console.log(`✅ Создана новая карточка: ${newItemId}`);
+                
+                // Заполняем поле Student GitHub
+                const updateGitHubMutation = `mutation UpdateStudentGitHub($input: UpdateProjectV2ItemFieldValueInput!) {
+                  updateProjectV2ItemFieldValue(input: $input) {
+                    projectV2Item {
+                      id
+                    }
+                  }
+                }`;
+                
+                await github.graphql(updateGitHubMutation, {
+                  input: {
+                    projectId: projectId,
+                    itemId: newItemId,
+                    fieldId: studentGitHubField.id,
+                    value: { text: author }
+                  }
+                });
+                
+                console.log(`✅ Добавлен Student GitHub: ${author}`);
+                
+                // Используем новую карточку
+                studentItem = { id: newItemId };
+                
+              } else {
+                console.log(`📎 Найдена существующая карточка: ${studentItem.id}`);
               }
-              
-              console.log(`📎 Найдена карточка: ${studentItem.id}`);
               
               // 7. ОБНОВЛЯЕМ СТАТУС
               const updateMutation = `mutation UpdateStatus($input: UpdateProjectV2ItemFieldValueInput!) {
