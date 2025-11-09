@@ -53,12 +53,6 @@ jobs:
               
               if (projects.length === 0) {
                 console.log('❌ У пользователя нет проектов!');
-                console.log('💡 Создайте Project Board:');
-                console.log('   1. Перейдите на https://github.com/users/virusneo1997-del/projects/');
-                console.log('   2. Нажмите "New project"');
-                console.log('   3. Выберите "Board" шаблон');
-                console.log('   4. Добавьте поле "Student GitHub" (Single text)');
-                console.log('   5. Добавьте карточки студентов');
                 return;
               }
               
@@ -90,18 +84,24 @@ jobs:
               console.log(`✅ Мерж: ${prMerged}`);
               console.log(`📝 Черновик: ${prDraft}`);
               
-              // ОПРЕДЕЛЯЕМ НОВЫЙ СТАТУС
+              // ОПРЕДЕЛЯЕМ НОВЫЙ СТАТУС - ИСПРАВЛЕННАЯ ЛОГИКА
               let newStatus = null;
               
               switch (prAction) {
                 case 'opened':
-                  newStatus = prDraft ? 'To do' : 'In Progress';
-                  console.log(`🎯 PR открыт - устанавливаем: ${newStatus}`);
+                  if (prDraft) {
+                    newStatus = 'To do';
+                    console.log('🎯 PR открыт как черновик - устанавливаем: To do');
+                  } else {
+                    newStatus = 'In Progress';
+                    console.log('🎯 PR открыт - устанавливаем: In Progress');
+                  }
                   break;
                   
                 case 'reopened':
-                  newStatus = 'In Progress';
-                  console.log('🎯 PR переоткрыт - устанавливаем: In Progress');
+                  // ВОТ ИСПРАВЛЕНИЕ - при reopen возвращаем в To do
+                  newStatus = 'To do';
+                  console.log('🎯 PR переоткрыт - устанавливаем: To do');
                   break;
                   
                 case 'ready_for_review':
@@ -111,12 +111,17 @@ jobs:
                   
                 case 'converted_to_draft':
                   newStatus = 'To do';
-                  console.log('🎯 PR в черновике - устанавливаем: To do');
+                  console.log('🎯 PR переведен в черновик - устанавливаем: To do');
                   break;
                   
                 case 'closed':
-                  newStatus = prMerged ? 'Done' : 'To do';
-                  console.log(`🎯 PR закрыт - устанавливаем: ${newStatus}`);
+                  if (prMerged) {
+                    newStatus = 'Done';
+                    console.log('🎯 PR мержен - устанавливаем: Done');
+                  } else {
+                    newStatus = 'To do';
+                    console.log('🎯 PR закрыт без мержа - устанавливаем: To do');
+                  }
                   break;
                   
                 default:
@@ -128,6 +133,8 @@ jobs:
                 console.log('ℹ️ Статус не изменился');
                 return;
               }
+              
+              console.log(`🎯 Устанавливаем статус: ${newStatus}`);
               
               // 3. ПОЛУЧАЕМ ИНФОРМАЦИЮ О ПРОЕКТЕ
               const projectDetailsQuery = `query GetProjectDetails($projectId: ID!) {
